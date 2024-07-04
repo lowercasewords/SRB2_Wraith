@@ -1,0 +1,11 @@
+name = wraith
+realname = Wraith
+hudname = WRAITH
+normalspeed = 45
+prefcolor = Aether
+prefoppositecolor = Black
+supercolor = rust
+actionspd = 80 
+flags = SF_NOSKID|SF_NOSPEEDADJUST|SF_RUNONWATER|SF_NOJUMPSPIN|SF_NOJUMPDAMAGE|SF_MULTIABILITY|SF_NOSHIELDABILITY
+ability = CA_NONE
+ability2 = CA2_NONE
