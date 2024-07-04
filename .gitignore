@@ -1,3 +1,7 @@
+# Project extras 
+*.pk3
+makefile
+
 # Compiled Lua sources
 luac.out
 
