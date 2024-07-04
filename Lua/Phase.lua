@@ -1,5 +1,5 @@
 
-freeslot("S_LEVITATION")
+freeslot("S_PHASE")
 
 
 local LEVITATION_MOMZ = -2*FRACUNIT
@@ -11,9 +11,9 @@ end
 ]]--
 
 --Levitation is used continuously while holding jump button in the air
-states[S_LEVITATION] = {
+states[S_PHASE] = {
 	sprite = SPR_PLAY,
-	frame = SPR2_STND,
+	frame = SPR2_STND|FF_TRANS50,
 	-- action = A_OnLevitation,
 	tics = -1,
 	nextstate = SPR2_FALL
@@ -24,11 +24,12 @@ states[S_LEVITATION] = {
 // damaging with the fog increases levitation timer
 ]]--
 
---Input
+
 addHook("PreThinkFrame", 
 	function()
 		for player in players.iterate() do
 			if(player.mo.skin == "wraith") then
+
 
 				--Record holding spin
 				if(player.cmd.buttons & BT_SPIN) then
@@ -45,10 +46,52 @@ addHook("PreThinkFrame",
 				end
 
 
+
+
+				--[[
+				if(player.mo.state ~= S_PHASE) then --If not in phase state yet...
+					
+					--Phasing..
+					if(player.spinheld >= 1) then 
+						player.mo.state = S_PHASE
+					end
+					-- print("switching...")
+				end
+				]]--
 			end
 		end
 	end
 )
+
+addHook("PostThinkFrame", 
+	function()
+		for player in players.iterate() do
+			if(player.mo.skin == "wraith") then
+
+				--If not in phase state yet...
+				if(player.mo.state ~= S_PHASE) then 
+					
+					--Phasing...
+					if(player.spinheld >= 1 and player.mo.state ~= player.mo.info.painstate and player.mo.state ~= player.mo.info.deathstate) then 
+						player.mo.state = S_PHASE
+					end
+					
+				end
+			end
+			if(player.mo.state == S_PHASE) then  
+
+				--Levitation
+				if(not P_IsObjectOnGround(player.mo)) then
+					player.mo.momz = LEVITATION_MOMZ
+				end
+
+				--Getting out of the phase state prematurely if let go of the spin button
+				if(player.spinheld == 0) then
+					player.mo.state = states[player.mo.state].nextstate
+				end
+			end
+		end 
+	end)
 
 --Levitation script
 addHook("PlayerThink", 
@@ -56,6 +99,8 @@ addHook("PlayerThink",
 		if(player.valid == true and player.mo.valid == true) then
 			
 			
+
+			--[[
 			if(player.mo.state ~= S_LEVITATION) then
 				--Levitation is allowed on the next jump press in the air
 				if(player.spinheld == 0 and player.lastbuttons & BT_JUMP and not P_IsObjectOnGround(player.mo)) then
@@ -88,6 +133,7 @@ addHook("PlayerThink",
 					player.mo.momz = LEVITATION_MOMZ
 				end
 			end
+			]]--
 		end
 	end
 )
