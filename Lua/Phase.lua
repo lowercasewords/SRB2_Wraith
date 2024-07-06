@@ -13,11 +13,12 @@ end
 --Levitation is used continuously while holding jump button in the air
 states[S_PHASE] = {
 	sprite = SPR_PLAY,
-	frame = SPR2_STND|FF_TRANS50,
+	frame = SPR2_RUN_|FF_TRANS50,
 	-- action = A_OnLevitation,
 	tics = -1,
-	nextstate = SPR2_FALL
+	nextstate = S_PLAY_FALL
 }
+
 
 --[[
 // Levitation on timer with a deadly fog around you,
