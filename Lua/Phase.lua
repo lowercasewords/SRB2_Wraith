@@ -133,6 +133,18 @@ addHook("PlayerThink",
 					if(player.mo.momz <= 5*FRACUNIT and player.jumpheld >= 1) then
 						-- player.mo.momz = $+FRACUNIT
 						P_SetObjectMomZ(player.mo, 2*LEVITATION_MOMZ, false)
+					-- elseif(player.mo.z - player.mo.floorz == 30*FRACUNIT) then
+					-- 	P_SetObjectMomZ(player.mo, 0, false)
+					--Checking how high the player is relative to the floor below
+					elseif(player.mo.z - player.mo.floorz < 30*FRACUNIT) then
+						-- print("move up!")
+						
+						-- if(player.mo.floorrove ~= nil and player.mo.floorrover.b_slope ~= nil) then
+						-- 	print(player.mo.floorrover.b_slope.zdelta)
+						-- end
+
+						P_SetObjectMomZ(player.mo, FRACUNIT, true)
+
 					--Downwards momentum
 					elseif(not P_IsObjectOnGround(player.mo)) then--if(player.mo.momz < 0) then
 						P_SetObjectMomZ(player.mo, -LEVITATION_MOMZ, false)
