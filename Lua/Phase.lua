@@ -10,7 +10,7 @@ freeslot("S_PHASE")
 
 
 
-local PHASE_GRAB_FLAGS = MF_ENEMY|MF_MONITOR
+local PHASE_GRAB_FLAGS = MF_ENEMY
 local PHASE_DAMAGE_FLAGS = MF_SHOOTABLE
 
 local LEVITATION_MOMZ = 2*FRACUNIT
@@ -44,7 +44,7 @@ states[S_PHASE] = {
 ]]--
 
 
-
+--[[
 --Tries to find a target in the fixed_t radius around the player
 local function FindTarget(player, min_distance, max_distance) 
 	if(player.valid == true and player.mo.valid == true) then
@@ -65,6 +65,47 @@ local function FindTarget(player, min_distance, max_distance)
 		return enemy
 	end
 end
+]]--
+
+
+--Tries to find and mark yet umarked targed in the fixed_t radius around the player
+local function darkmarkowner(player, min_distance, max_distance) 
+	if(player.valid == true and player.mo.valid == true) then
+
+		searchBlockmap("objects", function(playmo, foundmo)
+			
+			local found_distance = R_PointToDist2(playmo.x, playmo.y, foundmo.x, foundmo.y)
+
+			if(min_distance <= found_distance and found_distance <= max_distance
+			and foundmo.darkmarkowner == nil
+			and foundmo.flags & PHASE_GRAB_FLAGS) then
+
+				foundmo.darkmarkowner = player.mo
+
+				return true 
+			end
+		
+		end, player.mo, player.mo.x+max_distance*5000, player.mo.x-max_distance*5000, player.mo.y+max_distance*5000, player.mo.y-max_distance*5000)
+	end
+end
+
+
+addHook("MobjThinker", 
+	function(mo)
+
+		--Behavior for the marked enemy
+		if(mo.valid == true and mo.darkmarkowner ~= nil) then
+			--Canceling the mark for certain conditions
+			if(R_PointToDist2(mo.x, mo.y, mo.darkmarkowner.x, mo.darkmarkowner.y) > DARKNESS_DISTANCE_MAX or 
+			mo.darkmarkowner.state ~= S_PHASE) then
+				mo.darkmarkowner = nil
+			else 
+			--performing mark's behavior
+				P_InstaThrust(mo, R_PointToAngle2(mo.x, mo.y, mo.darkmarkowner.x, mo.darkmarkowner.y), mo.darkmarkowner.player.speed/2 + 20*FRACUNIT)
+			end
+		end
+	end)
+
 
 addHook("PlayerSpawn", 
 	function(player)
@@ -150,7 +191,10 @@ addHook("PlayerThink",
 						P_SetObjectMomZ(player.mo, -LEVITATION_MOMZ, false)
 					end
 					
-			
+					--Marking the enemy
+					darkmarkowner(player, DARKNESS_DISTANCE_MIN, DARKNESS_DISTANCE_MAX)
+					
+					--[[
 					--Try to find an enemy
 					local enemy = FindTarget(player, DARKNESS_DISTANCE_MIN, DARKNESS_DISTANCE_MAX)
 
@@ -165,7 +209,8 @@ addHook("PlayerThink",
 					if(enemy ~= nil and enemy.flags & PHASE_DAMAGE_FLAGS) then
 						P_DamageMobj(enemy, player.mo, player.mo)
 					end
-			
+					]]--
+
 				end
 
 
@@ -175,6 +220,25 @@ addHook("PlayerThink",
 				player.mo.prevstate = player.mo.state 
 		end
 	end)
+
+addHook("MobjCollide", 
+	function(playmo, enemy) 
+		if(enemy.valid == true and enemy.darkmarkowner == playmo) then
+			P_DamageMobj(enemy, playmo, playmo, 1)
+		end
+	end
+	, MT_PLAYER)
+
+
+addHook("MobjDamage", 
+function(player, enemy_inflictor, enemy_source, damage, damagetype) 
+	if(enemy_inflictor.valid == true and enemy_inflictor.darkmarkowner == player) then
+		return true
+	end
+end
+, MT_PLAYER)
+
+
 
 
 addHook("PreThinkFrame", 
