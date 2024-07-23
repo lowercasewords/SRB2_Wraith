@@ -1,0 +1,9 @@
+Character
+SkinName = Wraith
+DisplayName = WRAITH
+PlayerText = ^6Wraith the Spirit^0 has an identity crisis 
+
+^6Ability^0: Phase
+Hold Spin to enter the phase state, allowing you to levitate 
+snatch enemies closer to damage them!
+#

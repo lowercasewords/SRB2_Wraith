@@ -1,4 +1,0 @@
-Character
-SkinName = wraith
-DisplayName = Wraith
-#
