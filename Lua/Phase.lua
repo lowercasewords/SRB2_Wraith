@@ -11,7 +11,7 @@ freeslot("S_PHASE")
 
 
 local PHASE_GRAB_FLAGS = MF_ENEMY
-local PHASE_DAMAGE_FLAGS = MF_SHOOTABLE
+local PHASE_DAMAGE_FLAGS = MF_BOSS|MF_MONITOR
 
 local LEVITATION_MOMZ = 2*FRACUNIT
 local PHASE_ACCELERATION = 10*FRACUNIT
@@ -144,7 +144,7 @@ addHook("PlayerThink",
 				--Changing from phase state to any other
 				if(player.mo.prevstate == S_PHASE and player.mo.prevstate ~= player.mo.state) then
 					
-					print("stop levitation")
+					-- print("stop levitation")
 					player.acceleration = skins[player.mo.skin].acceleration
 					
 					--[[
@@ -156,13 +156,13 @@ addHook("PlayerThink",
 
 				--Going into phase
 				if(player.mo.state ~= S_PHASE and player.spinheld >= 1 and player.mo.state ~= player.mo.info.painstate and player.mo.state ~= player.mo.info.deathstate) then 
-					print("to phase from "..player.mo.state)
+					-- print("to phase from "..player.mo.state)
 					player.mo.state = S_PHASE
 				end
 
 				--Detecting when just entered the phase (doesn't work if state tics is -1)
 				if(player.mo.state == S_PHASE and states[player.mo.state].tics == player.mo.tics) then
-					print("on changed")
+					-- print("on changed")
 					player.acceleration = $*3--PHASE_ACCELERATION
 				end
 
@@ -176,6 +176,7 @@ addHook("PlayerThink",
 						P_SetObjectMomZ(player.mo, 2*LEVITATION_MOMZ, false)
 					-- elseif(player.mo.z - player.mo.floorz == 30*FRACUNIT) then
 					-- 	P_SetObjectMomZ(player.mo, 0, false)
+
 					--Checking how high the player is relative to the floor below
 					elseif(player.mo.z - player.mo.floorz < 30*FRACUNIT) then
 						-- print("move up!")
@@ -223,22 +224,30 @@ addHook("PlayerThink",
 
 addHook("MobjCollide", 
 	function(playmo, enemy) 
-		if(enemy.valid == true and enemy.darkmarkowner == playmo) then
+		--Damaging the marked (grabed) enemies or mic objects while in phase
+		print("collided")
+		if(enemy.valid == true and (enemy.darkmarkowner == playmo
+		or (enemy.flags & PHASE_DAMAGE_FLAGS ~= 0 and enemy.health > 0))) then
+			print("hit!")
 			P_DamageMobj(enemy, playmo, playmo, 1)
 		end
-	end
-	, MT_PLAYER)
+	end, 
+	MT_PLAYER)
 
 
 addHook("MobjDamage", 
-function(player, enemy_inflictor, enemy_source, damage, damagetype) 
-	if(enemy_inflictor.valid == true and enemy_inflictor.darkmarkowner == player) then
-		return true
-	end
-end
-, MT_PLAYER)
+	function(playmo, enemy_inflictor, enemy_source, damage, damagetype) 
+		--Player won't get damaged by marked (grabed) enemies while in phase
+		if(enemy_inflictor.valid == true and playmo.state == S_PHASE and 
+		(enemy_inflictor.darkmarkowner == playmo or enemy_source.flags|MF_BOSS == enemy_source.flags)) then
+			-- print("don't hit	")
+			return true
+		end
+	end, 
+	MT_PLAYER)
 
-
+addHook("MobjMoveBlocked", function(mobj, thing, line)
+end)
 
 
 addHook("PreThinkFrame", 
