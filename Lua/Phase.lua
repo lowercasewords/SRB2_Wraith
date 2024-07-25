@@ -9,7 +9,6 @@
 freeslot("S_PHASE")
 
 
-
 local PHASE_GRAB_FLAGS = MF_ENEMY
 local PHASE_DAMAGE_FLAGS = MF_BOSS|MF_MONITOR
 
@@ -20,6 +19,7 @@ local DARKNESS_DISTANCE_MAX = 300*FRACUNIT
 local DARKNESS_DISTANCE_MIN = 75*FRACUNIT
 local LIGHT_DISTANCE_MAX = DARKNESS_DISTANCE_MIN
 
+local DEFAULT_PHASEJUICE_MAX = 100*FRACUNIT
 --[[
 local function A_OnLevitation(playmo)
 	playmo.can_levitate = false
@@ -110,12 +110,16 @@ addHook("MobjThinker",
 addHook("PlayerSpawn", 
 	function(player)
 		player.mo.prevstate = player.mo.state
+		player.mo.max_phasejuice = DEFAULT_PHASEJUICE_MAX
+		player.mo.phasejuice = player.mo.max_phasejuice
+		-- print("spawned")
 	end)
 
 addHook("PlayerThink", 
 	function(player)
 		if(player.valid == true and player.mo.valid == true) then
-
+			
+			-- print(player.mo.phasejuice/FRACUNIT)
 			
 					--Current order in a single tic
 				--Going into phase
@@ -168,8 +172,10 @@ addHook("PlayerThink",
 
 
 				--While in the phase
-				if(player.mo.state == S_PHASE) then
+				if(player.mo.state == S_PHASE and player.mo.phasejuice > 0) then
 					
+					player.mo.phasejuice = $-1*FRACUNIT
+
 					--Upper momentum
 					if(player.mo.momz <= 5*FRACUNIT and player.jumpheld >= 1) then
 						-- player.mo.momz = $+FRACUNIT
@@ -224,11 +230,12 @@ addHook("PlayerThink",
 
 addHook("MobjCollide", 
 	function(playmo, enemy) 
+		-- print("collided")
+
 		--Damaging the marked (grabed) enemies or mic objects while in phase
-		print("collided")
 		if(enemy.valid == true and (enemy.darkmarkowner == playmo
 		or (enemy.flags & PHASE_DAMAGE_FLAGS ~= 0 and enemy.health > 0))) then
-			print("hit!")
+			-- print("hit!")
 			P_DamageMobj(enemy, playmo, playmo, 1)
 		end
 	end, 
@@ -269,7 +276,10 @@ addHook("PreThinkFrame",
 					player.jumpheld = 0
 				end
 
-
+				--Phase "juice" refill on land (which is an ability bar)
+				if(player.mo.state ~= S_PHASE and player.mo.phasejuice < player.mo.max_phasejuice and P_IsObjectOnGround(player.mo)) then
+					player.mo.phasejuice = $+FRACUNIT
+				end
 				
 
 			end
